@@ -8,6 +8,9 @@ import time
 is good move if no children result in loss and each of those children have >1 good move for me
 """
 
+count = 0
+
+
 def _count(depth: int):
     global count
 
@@ -44,19 +47,13 @@ class Bot():
         if parent.winner == self.me:
             return True
 
-        # generate their moves
-        their_moves = parent.make_children()
-
         # if any of their moves result in loss then is not good move
-        for their_move in their_moves:
+        for their_move in parent.make_children():
             if their_move.winner == self.enemy:
                 return False
 
-            # generate my moves
-            my_moves = their_move.make_children()
-
             atleast_1_good_move = False
-            for my_move in my_moves:  # TODO: make generator
+            for my_move in their_move.make_children():
                 if self.is_good_move(my_move, max_depth, depth+2):
                     atleast_1_good_move = True
                     break
@@ -65,6 +62,3 @@ class Bot():
                 return False
 
         return True
-
-
-count = 0
