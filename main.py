@@ -5,7 +5,7 @@ import time
 
 if __name__ == '__main__':
     board = Connect4Board()
-    bot = Bot(depth=6)
+    bot = Bot(max_depth=6)
 
     while not board.winner:
         if board.whose_turn == Player.X:

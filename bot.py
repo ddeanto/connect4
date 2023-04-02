@@ -20,28 +20,16 @@ def _count(depth: int):
  
 
 class Bot():
-    def __init__(self, depth: int):
+    def __init__(self, max_depth: int):
+        assert max_depth > 0
+
         self.me = Player.O
         self.enemy = Player.X
-        self.depth = depth
+        self.max_depth = max_depth
 
 
-    def select_move(self, board: Connect4Board):
-        assert board.whose_turn == self.me
-
-        possible_moves = list(board.make_children())
-        random.shuffle(possible_moves)
-
-        for move in possible_moves:
-            if self.is_good_move(move, self.depth):
-                return move.last_move[1]
-
-        return random.choice(possible_moves).last_move[1]
-
-        
-
-    def is_good_move(self, parent: Connect4Board, max_depth: int, depth: int = 0) -> bool:
-        if depth > max_depth:
+    def _is_good_move(self, parent: Connect4Board, depth: int = 0) -> bool:
+        if depth > self.max_depth:
             return True
 
         if parent.winner == self.me:
@@ -54,7 +42,7 @@ class Bot():
 
             atleast_1_good_move = False
             for my_move in their_move.make_children():
-                if self.is_good_move(my_move, max_depth, depth+2):
+                if self._is_good_move(my_move, depth+2):
                     atleast_1_good_move = True
                     break
             
@@ -62,3 +50,18 @@ class Bot():
                 return False
 
         return True
+
+
+    def select_move(self, board: Connect4Board) -> int:
+        assert board.whose_turn == self.me
+
+        possible_moves = list(board.make_children())
+        random.shuffle(possible_moves)
+
+        for move in possible_moves:
+            if self._is_good_move(parent=move):
+                # found first good move, return col_num that depicts this move
+                return move.last_move[1]
+
+        # if no good moves, pick bad move at random cuz f it 
+        return random.choice(possible_moves).last_move[1]

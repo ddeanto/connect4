@@ -97,3 +97,11 @@ class Connect4Board():
             if cell_values == win:
                 self.winner = self.whose_turn
                 break
+
+
+
+if __name__ == '__main__':
+    board = Connect4Board()
+    for child in list(board.make_children()):
+        print(child)
+    
