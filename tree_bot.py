@@ -1,25 +1,13 @@
 import random
 from game_board import Connect4Board, Player
-import copy
-import time
 
 
 """
 is good move if no children result in loss and each of those children have >1 good move for me
 """
 
-count = 0
 
-
-def _count(depth: int):
-    global count
-
-    count += 1
-    if count % 10_000 == 0:
-        print(f'depth: {depth}, count: {count}') 
- 
-
-class Bot():
+class TreeBot():
     def __init__(self, depth: int):
         self.me = Player.O
         self.enemy = Player.X
@@ -62,3 +50,5 @@ class Bot():
                 return False
 
         return True
+
+
