@@ -1,4 +1,4 @@
-from main import Connect4Board
+from main import Connect4Board, Player
 import sys
 
 def test_4segments_generation():
@@ -121,3 +121,14 @@ def test_who_won2():
     board4.who_won()
     print(f'line 109 x won\n{board4}')
     assert board4.winner == -1
+
+
+def test_tie():
+    board4 = Connect4Board()
+    for _ in range(2):
+        for col in range(7):
+            board4.drop_piece(col)
+            board4.drop_piece((col+1)%7)
+            board4.drop_piece((col+2)%7)
+    
+    assert board4.winner == Player.EMPTY

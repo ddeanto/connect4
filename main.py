@@ -1,27 +1,34 @@
-from bot import Bot
-from game_board import Connect4Board, Player
 import time
+import random
+
+from neural_net import NeuralNet
+from game_board import Connect4Board, Player
+from bot import Bot
 
 
 if __name__ == '__main__':
-    board = Connect4Board()
-    bot = Bot(max_depth=6)
+    trained_playerX = NeuralNet.from_json('player-X.json')
+    tree_bot = Bot(max_depth=2)
 
-    while not board.winner:
-        if board.whose_turn == Player.X:
-            col_num = int(
-                input(f'Player {board.whose_turn}, Make your Selection(0-6):'))            
-        else:
-            begin = time.time()
+    wins = [0, 0]
+    for _ in range(100):
+        board = Connect4Board()
 
-            col_num = bot.select_move(board)
+        while board.winner is None:
+            if board.whose_turn == Player.X:
+                col_num = trained_playerX.select_move(board)
+            else:
+                col_num = tree_bot.select_move(board)
 
-            duration = time.time() - begin
-            if time.time() - begin < 1:
-                time.sleep(0.5)
+            board.drop_piece(col_num)
 
+        winner = Player(board.winner)
+        if winner == Player.X:
+            wins[0] += 1
+        elif winner == Player.O:
+            wins[1] += 1
 
-        board.drop_piece(col_num)
-        print(board)
+        print(f'\nwinner:{winner}\n{board}')
+        print(wins)
+        # time.sleep(0.0)
 
-    print(f'Player {Player(board.winner)} is the winner!')

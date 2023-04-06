@@ -50,6 +50,10 @@ class Connect4Board():
         self.last_move = (row_num, col_num)
 
 
+    def available_moves(self):
+        return [col for col, depth in enumerate(self.column_depth) if depth >= 0]
+
+
     def make_children(self):
         for col_num in range(7):
             if self.column_depth[col_num] >= 0:
@@ -83,7 +87,8 @@ class Connect4Board():
          - check any segments are N(=4) X's or Os in a row.
         """
         if self.cells_open <= 0:
-            return Player.EMPTY
+            self.winner = Player.EMPTY
+            return
 
         # 4 X's or O's in a row. To be compared to.
         win = [self.whose_turn] * 4
