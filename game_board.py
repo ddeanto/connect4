@@ -86,6 +86,9 @@ class Connect4Board():
          - using map to get relevant N(=4)segments
          - check any segments are N(=4) X's or Os in a row.
         """
+        if self.cells_open > 42-7:
+            return
+
         if self.cells_open <= 0:
             self.winner = Player.EMPTY
             return

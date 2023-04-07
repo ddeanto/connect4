@@ -1,5 +1,9 @@
-from main import Connect4Board, Player
 import sys
+import time
+
+from main import Connect4Board, Player
+from neural_net import NeuralNet
+
 
 def test_4segments_generation():
     """
@@ -132,3 +136,24 @@ def test_tie():
             board4.drop_piece((col+2)%7)
     
     assert board4.winner == Player.EMPTY
+
+
+def test_benchmark():
+    begin = time.time()
+
+    for _ in range(30*30):
+        player_x = NeuralNet()
+        player_o = NeuralNet()
+
+        board = Connect4Board()
+        
+        while board.winner is None:
+            if board.whose_turn == Player.X:
+                col = player_x.select_move(board=board)
+            else:
+                col = player_o.select_move(board=board)
+            board.drop_piece(col)
+
+    end = time.time()
+    print(round(end-begin, 2))
+

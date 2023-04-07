@@ -1,9 +1,11 @@
+import time
 from multiprocessing import Pool
 from typing import ForwardRef
 import random
 import copy
 from itertools import combinations
 import json
+import numpy as np
 
 from game_board import Connect4Board, Player
 
@@ -21,28 +23,14 @@ class InputNeuron():
         self.b = rand(x=1) if b is None else b
         self.value = None
 
-    def activate(self) -> float:
-        m = self.weights[0]
-        x = self.value
-        b = self.b
-        return(
-            max(m*x + b, 0)
-        ) 
-
 
 Neuron = ForwardRef('Neuron')
-
 class Neuron():
     def __init__(self, children: list[Neuron] | list[InputNeuron] = None, weights=None, b=None):
         self.children = children if children is None else children
-        self.weights = [rand(x=1) for _ in range(len(children))] if weights is None else weights
+        weights = [rand(x=1) for _ in range(len(children))] if weights is None else weights
+        self.weights = np.array(weights)
         self.b = rand(x=1) if b is None else b
-
-    def activate(self) -> float:
-        cumsum = self.b
-        for weight, child in zip(self.weights, self.children):
-            cumsum += weight*child.activate()
-        return max(cumsum, 0)
 
 
 NeuralNet = ForwardRef('NeuralNet')
@@ -63,7 +51,20 @@ class NeuralNet():
         for x, input_neuron in zip(X, self.input_neurons):
             input_neuron.value = x
 
-        outputs = [(n, neuron.activate()) for n, neuron in enumerate(self.output_neurons)]
+        weights = np.array([n.weights[0] for n in self.input_neurons])
+        values = np.array([n.value for n in self.input_neurons])
+        bs = np.array([n.b for n in self.input_neurons])
+        input_layer = [max(0,x) for x in weights*values + bs]
+
+        middle_layer = [
+            max((n.weights*input_layer).sum() + n.b, 0) for n in self.hidden_neurons
+        ]
+
+        outputs = [
+            max((n.weights*middle_layer).sum() + n.b, 0) for n in self.output_neurons
+        ]
+        outputs = [(ind, x) for ind, x in enumerate(outputs)]
+
         outputs = [x for x in outputs if x[1] > 0 and x[0] in available_moves]
         outputs = sorted(outputs, key=lambda o: o[1], reverse=True)
 
@@ -105,7 +106,7 @@ class NeuralNet():
         for neuron in self.input_neurons:
             input_neurons.append(
                 {
-                    'weights': neuron.weights,
+                    'weights': list(neuron.weights),
                     'b': neuron.b
                 }
             )
@@ -114,7 +115,7 @@ class NeuralNet():
         for neuron in self.hidden_neurons:
             hidden_neurons.append(
                 {
-                    'weights': neuron.weights,
+                    'weights': list(neuron.weights),
                     'b': neuron.b
                 }
             )
@@ -123,7 +124,7 @@ class NeuralNet():
         for neuron in self.output_neurons:
             output_neurons.append(
                 {
-                    'weights': neuron.weights,
+                    'weights': list(neuron.weights),
                     'b': neuron.b
                 }
             )
@@ -144,19 +145,19 @@ class NeuralNet():
         input_neurons = []
         for neuron in d['input_neurons']:
             input_neurons.append(
-                InputNeuron(weights=neuron['weights'], b=neuron['b'])
+                InputNeuron(weights=np.array(neuron['weights']), b=neuron['b'])
             )
 
         hidden_neurons = []
         for neuron in d['hidden_neurons']:
             hidden_neurons.append(
-                Neuron(weights=neuron['weights'], b=neuron['b'], children=input_neurons)
+                Neuron(weights=np.array(neuron['weights']), b=neuron['b'], children=input_neurons)
             )
 
         output_neurons = []
         for neuron in d['output_neurons']:
             output_neurons.append(
-                Neuron(weights=neuron['weights'], b=neuron['b'], children=hidden_neurons)
+                Neuron(weights=np.array(neuron['weights']), b=neuron['b'], children=hidden_neurons)
             )
 
         return NeuralNet(input_neurons=input_neurons, hidden_neurons=hidden_neurons, output_neurons=output_neurons)
@@ -180,7 +181,6 @@ def play_connect4(players: Players) -> Player:
             col = player_o.select_move(board=board)
         board.drop_piece(col)
 
-    # print(f'winner: {Player(board.winner)}\n{board}')
     return board.winner 
 
 
@@ -219,7 +219,7 @@ def _make_new_generation(citizens: list[Citizen], HALF_choose_2, HALF) -> list[C
 
 
 def genetic_algo():
-    N = 10
+    N = 30
     HALF = N//2
     HALF_choose_2 = list(combinations(list(range(HALF)), 2))
 
@@ -229,14 +229,18 @@ def genetic_algo():
     # generation
     generation = 0
     while True:
-        print('generation', generation := generation + 1)
+        print('\ngeneration', generation := generation + 1)
 
+        begin = time.time()
         for x in range(N):
+
             x_player = xs[x]
             players = [Players(player_x=x_player.nn,player_o=o.nn) for o in os]
 
-            with Pool(6) as p:
-                winners = p.map(play_connect4, players)
+            # with Pool(3) as p:
+            #     winners = p.map(play_connect4, players)
+
+            winners = [play_connect4(player) for player in players]
 
             for ind, winner in enumerate(winners):
                 o_player = os[ind]
@@ -246,7 +250,11 @@ def genetic_algo():
                 elif winner == Player.O:
                     o_player.score += 1
 
-        print(f'\ngeneration: {generation}\nx_scores: {[x.score for x in xs]}\no_scores: {[o.score for o in os]}')
+        end = time.time()
+        print(f'all games: {end-begin}, {len(winners)}, {N}')
+
+
+        print(f'x_scores: {[x.score for x in xs]}\no_scores: {[o.score for o in os]}')
 
         # make next generation
 
