@@ -1,3 +1,4 @@
+from multiprocessing import Pool
 from typing import ForwardRef
 import random
 import copy
@@ -161,14 +162,22 @@ class NeuralNet():
         return NeuralNet(input_neurons=input_neurons, hidden_neurons=hidden_neurons, output_neurons=output_neurons)
 
 
-def play_connect4(playerX: NeuralNet, playerY: NeuralNet) -> Player:
+class Players():
+    def __init__(self, player_x: NeuralNet, player_o: NeuralNet):
+        self.player_x = player_x
+        self.player_o = player_o
+
+def play_connect4(players: Players) -> Player:
+    player_x = players.player_x
+    player_o = players.player_o
+
     board = Connect4Board()
     
     while board.winner is None:
         if board.whose_turn == Player.X:
-            col = playerX.select_move(board=board)
+            col = player_x.select_move(board=board)
         else:
-            col = playerY.select_move(board=board)
+            col = player_o.select_move(board=board)
         board.drop_piece(col)
 
     # print(f'winner: {Player(board.winner)}\n{board}')
@@ -210,7 +219,7 @@ def _make_new_generation(citizens: list[Citizen], HALF_choose_2, HALF) -> list[C
 
 
 def genetic_algo():
-    N = 40
+    N = 10
     HALF = N//2
     HALF_choose_2 = list(combinations(list(range(HALF)), 2))
 
@@ -222,17 +231,16 @@ def genetic_algo():
     while True:
         print('generation', generation := generation + 1)
 
-        count = 0
         for x in range(N):
-            for o in range(N):
-                count += 1
-                if count%100 == 0:
-                    print(count)
+            x_player = xs[x]
+            players = [Players(player_x=x_player.nn,player_o=o.nn) for o in os]
 
-                x_player = xs[x]
-                o_player = os[o]
+            with Pool(6) as p:
+                winners = p.map(play_connect4, players)
 
-                winner = play_connect4(x_player.nn, o_player.nn)
+            for ind, winner in enumerate(winners):
+                o_player = os[ind]
+
                 if winner == Player.X:
                     x_player.score += 1
                 elif winner == Player.O:
@@ -258,24 +266,4 @@ def genetic_algo():
 
 
 if __name__ == '__main__':
-    # genetic_algo()
-
-
-    nn = NeuralNet()
-    with open('./player-TEST.json', 'w') as f:
-        text = nn.to_json()
-        f.write(text)
-
-    nn2 = NeuralNet.from_json('./player-TEST.json')
-
-    assert nn.input_neurons[4].weights == nn2.input_neurons[4].weights
-    assert nn.hidden_neurons[14].weights == nn2.hidden_neurons[14].weights
-    assert nn.output_neurons[4].weights == nn2.output_neurons[4].weights
-    
-    board = Connect4Board()
-
-    print('nn select_move')
-    nn.select_move(board)
-
-    print('nn2 select_move')
-    nn2.select_move(board)
+    genetic_algo()

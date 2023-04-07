@@ -1,6 +1,3 @@
-import time
-import random
-
 from neural_net import NeuralNet
 from game_board import Connect4Board, Player
 from bot import Bot
@@ -11,7 +8,7 @@ if __name__ == '__main__':
     tree_bot = Bot(max_depth=2)
 
     wins = [0, 0]
-    for _ in range(100):
+    for _ in range(1_000):
         board = Connect4Board()
 
         while board.winner is None:

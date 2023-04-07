@@ -21,7 +21,7 @@ def _count(depth: int):
 
 class Bot():
     def __init__(self, max_depth: int):
-        assert max_depth > 0
+        assert max_depth >= 0
 
         self.me = Player.O
         self.enemy = Player.X
@@ -29,7 +29,7 @@ class Bot():
 
 
     def _is_good_move(self, parent: Connect4Board, depth: int = 0) -> bool:
-        if depth > self.max_depth:
+        if depth >= self.max_depth:
             return True
 
         if parent.winner == self.me:
